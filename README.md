@@ -16,9 +16,9 @@ A Flutter project for teamtalk.
 - [x] 本地化储存 *(in progress)*
 - [x] 新消息通知以及加载
 - [x] 上次登录信息保留
-- [ ] 未读消息数显示
-- [ ] 动态表情显示以及发送
-- [ ] 个人主页
+- [x] 未读消息数显示 *(in progress)*
+- [x] 动态表情显示以及发送
+- [x] 个人主页
 - [ ] 语音发送
 - [ ] 图片发送
 - [ ] ...
@@ -33,12 +33,29 @@ cd flutter_tt/lib
 git clone https://github.com/xiaominfc/teamtalk_dart_lib.git
 # or ln  {teamtalk_dart_lib} 到flutter_tt/lib 下  
 
+# 更新teamtalk_dart_lib到最新
+# teamtalk_dart_lib路径下
+git pull origin master
+
 # cd 到flutter_tt下（工程目录下）
 cd ..
 flutter packages get
 flutter run
 
 ```
+
+## 预览
+
+<img src="https://raw.githubusercontent.com/xiaominfc/flutter_tt/master/preview/ios_1.png" width="50%" />
+
+<img src="https://raw.githubusercontent.com/xiaominfc/flutter_tt/master/preview/ios_2.png" width="50%"  />
+
+<img src="https://raw.githubusercontent.com/xiaominfc/flutter_tt/master/preview/ios_3.png" width="50%" />
+
+<img src="https://raw.githubusercontent.com/xiaominfc/flutter_tt/master/preview/ios_4.png" width="50%" />
+
+
+
 
 ## ps
 

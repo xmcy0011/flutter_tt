@@ -5,7 +5,7 @@
 // Distributed under terms of the MIT license.
 //
 import 'package:sqflite/sqlite_api.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import './database_helper.dart';
 
 
@@ -14,17 +14,19 @@ class UserEntry extends BaseItem {
   String name;
   String avatar;
   int id;
-  UserEntry({this.id,this.name,this.avatar});
+  String signInfo;
+  UserEntry({this.id,this.name,this.avatar,this.signInfo});
 
   @override
   Map<String, dynamic> toMap() {
-    return {'id':id, 'name':name, 'avatar':avatar};
+    return {'id':id, 'name':name, 'avatar':avatar, 'signInfo':signInfo};
   }
   @override
   fromMap(Map<String, dynamic> map){
     this.id = map['id'];
     this.name = map['name'];
     this.avatar = map['avatar'];
+    this.signInfo = map['signInfo'];
     return this;
   }
 
@@ -37,15 +39,6 @@ class UserEntry extends BaseItem {
 }
 
 class UserDao extends PrimaryDao<UserEntry> {
-  // static UserDao _instance;
-  // static UserDao instance(){
-  //   if(_instance == null) {
-  //     _instance = new UserDao._internal();
-  //   }
-  //   return _instance;
-  // }
-  // UserDao._internal();
-  // factory UserDao() => instance();
 
   @override
   String tableName() {
@@ -59,8 +52,10 @@ class UserDao extends PrimaryDao<UserEntry> {
 
   @override
   initTable(Database db, int version) async{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt('users_lastUpdateTime', 0);
     await dropTable(db, version);
-    await db.execute('CREATE TABLE '+ tableName() + ' (id INTEGER PRIMARY KEY, name TEXT, avatar TEXT)');
+    await db.execute('CREATE TABLE '+ tableName() + ' (id INTEGER PRIMARY KEY, name TEXT, avatar TEXT, signInfo TEXT)');
   }
 }
 
@@ -112,18 +107,18 @@ class GroupDao extends PrimaryDao<GroupEntry> {
 
 
 class IMMsgType {
-  static int MSG_TYPE_SINGLE_TEXT = 1;
-  static int MSG_TYPE_SINGLE_AUDIO = 2;
-  static int MSG_TYPE_GROUP_TEXT = 17;
-  static int MSG_TYPE_GROUP_AUDIO = 18;
+  static const int MSG_TYPE_SINGLE_TEXT = 1;
+  static const int MSG_TYPE_SINGLE_AUDIO = 2;
+  static const int MSG_TYPE_GROUP_TEXT = 17;
+  static const int MSG_TYPE_GROUP_AUDIO = 18;
 }
 
 
 
 class IMMsgSendStatus {
-  static int Sending = 1;
-  static int Ok = 2;
-  static int Failed = 0;
+  static const int Sending = 1;
+  static const int Ok = 2;
+  static const int Failed = 0;
 }
 
 class MessageEntry extends BaseItem {
@@ -151,30 +146,65 @@ class MessageEntry extends BaseItem {
 }
 
 class IMSeesionType {
-  static int Person=1;
-  static int Group=2;
+  static const int Person=1;
+  static const int Group=2;
 }
 
 class SessionEntry extends BaseItem {
 
+  String sessionKey;
   int sessionId;
   String lastMsg;
   String sessionName;
   String avatar;
   int sessionType;
+  int updatedTime;
+
+  SessionEntry([int _sessionId,int _sessionType]){
+    this.sessionId = _sessionId;
+    this.sessionType = _sessionType;
+    this.sessionKey = _sessionId.toString() + "_" + _sessionType.toString();
+  }
 
   @override
-  Map<String, dynamic> toMap() {
-    
-    return {'sessionId':sessionId, 'sessionName':sessionName, 'lastMsg':lastMsg, 'avatar':avatar, 'sessionType':sessionType};
+  Map<String, dynamic> toMap() {    
+    return {'sessionKey':sessionKey,'sessionId':sessionId, 'sessionName':sessionName, 'lastMsg':lastMsg, 'avatar':avatar, 'sessionType':sessionType,'updatedTime': updatedTime};
   }
 
   @override
   fromMap(Map<String, dynamic> map) {
-    // TODO: implement fromMap
+    sessionKey = map['sessionKey'];
+    sessionId = map['sessionId'];
+    avatar = map['avatar'];
+    lastMsg = map['lastMsg'];
+    sessionName = map['sessionName'];
+    sessionType = map['sessionType'];
+    updatedTime = map['updatedTime'];
     return this;
   }
+}
 
+class SessionDao extends PrimaryDao<SessionEntry>{
+  @override
+  BaseItem buildItem(Map<String, dynamic> map) {
+    return SessionEntry().fromMap(map);
+  }
+
+  @override
+  String primarykey() {
+    return "sessionKey";
+  }
+
+  @override
+  initTable(Database db, int version) async{
+    dropTable(db, version);
+    await db.execute('CREATE TABLE '+tableName() + ' (sessionKey TEXT PRIMARY KEY, sessionName TEXT, avatar TEXT, sessionId INTEGER, sessionType INTEGER, lastMsg TEXT, updatedTime INTEGER)');
+  }
+
+  @override
+  String tableName() {
+    return "im_session";
+  }
 
 }
 

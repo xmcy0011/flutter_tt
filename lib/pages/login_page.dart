@@ -32,7 +32,7 @@ class _LoginPageState extends State<LoginPage> {
   final usernameTextFieldController = TextEditingController(text: "xiaominfc");
   final passwordTextFieldController = TextEditingController(text: "123456");
 
-  final DEFAULTLOGINSERVERURL = 'http://im.xiaominfc.com:8080/msg_server';
+  static const DEFAULTLOGINSERVERURL = 'http://im.xiaominfc.com:8080/msg_server';
   
 
   @override
@@ -45,14 +45,19 @@ class _LoginPageState extends State<LoginPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var name = prefs.getString("login_username");
     var password = prefs.getString("login_password");
-    print(name);
-    print(password);
+    var diableAutoLogin =  prefs.getBool("diable_autoLogin");
+    if(diableAutoLogin == null) {
+      diableAutoLogin = false;
+    }
     if(name != null && password != null) {
       usernameTextFieldController.text = name;
       passwordTextFieldController.text = password;
       setState(() {
         
       });
+      if(!diableAutoLogin) {
+        _doLogin();
+      }
     }
   }
 
@@ -80,25 +85,24 @@ class _LoginPageState extends State<LoginPage> {
     var username = usernameTextFieldController.text;
     var password = passwordTextFieldController.text;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    var login_server_url = prefs.getString("login_server_url");
-    if(login_server_url == null) {
-      login_server_url = DEFAULTLOGINSERVERURL;
+    var loginServerUrl = prefs.getString("login_server_url");
+    if(loginServerUrl == null) {
+      loginServerUrl = DEFAULTLOGINSERVERURL;
     }
     var imClient = new IMClient()
-        .init(username, password, login_server_url);
-        //.init(
-        //    username, password, "http://im.jingnongfucang.cn:8080/msg_server");
+        .init(username, password, loginServerUrl);
     imClient.requesetMsgSever().then((serverInfo) {
       if (serverInfo == null) {
-        _loginFailed(msg:'获取msg_server失败:' + login_server_url);
+        _loginFailed(msg:'获取msg_server失败:' + loginServerUrl);
         return;
       }
       imClient
           .doLogin(serverInfo['priorIP'], int.parse(serverInfo['port']))
-          .then((result){
-        if (result) {
+          .then((loginResult){
+        if (loginResult.result) {
           prefs.setString('login_username', username);
           prefs.setString('login_password', password);
+          prefs.setBool("diable_autoLogin",false);
           IMHelper.defaultInstance().initData().then((result){
             _showHome();
           });
@@ -115,11 +119,11 @@ class _LoginPageState extends State<LoginPage> {
   
   final textFieldController = TextEditingController(text: DEFAULTLOGINSERVERURL);
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  var login_server_url = prefs.getString("login_server_url");
-  if(login_server_url == null) {
-    login_server_url = DEFAULTLOGINSERVERURL;
+  var loginServerUrl = prefs.getString("login_server_url");
+  if(loginServerUrl == null) {
+    loginServerUrl = DEFAULTLOGINSERVERURL;
   }
-  textFieldController.text = login_server_url;
+  textFieldController.text = loginServerUrl;
   return showDialog<String>(
     context: context,
     barrierDismissible: false, // dialog is dismissible with a tap on the barrier
@@ -198,7 +202,6 @@ class _LoginPageState extends State<LoginPage> {
       padding: const EdgeInsets.fromLTRB(30, 60, 30, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
-        //mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           usernameTextField,
           SizedBox(height: 10.0),
@@ -210,11 +213,8 @@ class _LoginPageState extends State<LoginPage> {
     ));
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text("Login"),
         actions: <Widget>[
-            // action button
             IconButton(
               icon: Icon(Icons.settings),
               onPressed: () {
